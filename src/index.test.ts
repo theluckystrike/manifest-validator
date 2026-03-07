@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateManifest } from './index';
+import { validateManifest, fixManifest } from './index';
 
 describe('manifest-validator', () => {
   it('should validate a correct MV3 manifest', () => {
@@ -151,6 +151,61 @@ describe('manifest-validator', () => {
         }]
       };
       expect(validateManifest(manifest).valid).toBe(true);
+    });
+  });
+
+  describe('fixManifest', () => {
+    it('should rename browser_action to action', () => {
+      const manifest = {
+        browser_action: { default_popup: 'popup.html' }
+      };
+      const fixed = fixManifest(manifest);
+      expect(fixed.action).toEqual({ default_popup: 'popup.html' });
+      expect(fixed.browser_action).toBeUndefined();
+    });
+
+    it('should rename background.scripts to background.service_worker', () => {
+      const manifest = {
+        background: {
+          scripts: ['background.js', 'other.js']
+        }
+      };
+      const fixed = fixManifest(manifest);
+      expect(fixed.background.service_worker).toBe('background.js');
+      expect(fixed.background.scripts).toBeUndefined();
+    });
+
+    it('should move host permissions from permissions to host_permissions', () => {
+      const manifest = {
+        permissions: ['storage', 'https://*.google.com/*', '<all_urls>']
+      };
+      const fixed = fixManifest(manifest);
+      expect(fixed.permissions).toEqual(['storage']);
+      expect(fixed.host_permissions).toContain('https://*.google.com/*');
+      expect(fixed.host_permissions).toContain('<all_urls>');
+    });
+
+    it('should handle all fixes together and result in a valid manifest', () => {
+      const manifest = {
+        manifest_version: 2,
+        name: 'Test Ext',
+        version: '1.0',
+        icons: { '16': 'icon16.png', '48': 'icon48.png', '128': 'icon128.png' },
+        browser_action: { default_popup: 'popup.html' },
+        background: { scripts: ['bg.js'] },
+        permissions: ['storage', 'https://*.google.com/*']
+      };
+      
+      let fixed = fixManifest(manifest);
+      // Manually fix manifest_version for validation
+      fixed.manifest_version = 3;
+      
+      const result = validateManifest(fixed);
+      expect(result.valid).toBe(true);
+      expect(fixed.action).toBeDefined();
+      expect(fixed.background.service_worker).toBe('bg.js');
+      expect(fixed.host_permissions).toContain('https://*.google.com/*');
+      expect(fixed.permissions).toEqual(['storage']);
     });
   });
 });

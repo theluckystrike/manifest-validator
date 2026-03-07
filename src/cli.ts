@@ -2,10 +2,13 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import { validateManifest } from './index';
+import { validateManifest, fixManifest } from './index';
 
 async function main() {
-  const filePath = process.argv[2] || 'manifest.json';
+  const isFix = process.argv.includes('--fix');
+  // Filter out the --fix flag to find the file path
+  const args = process.argv.slice(2).filter(arg => arg !== '--fix');
+  const filePath = args[0] || 'manifest.json';
   const absolutePath = path.resolve(filePath);
 
   if (!fs.existsSync(absolutePath)) {
@@ -15,7 +18,18 @@ async function main() {
 
   try {
     const content = fs.readFileSync(absolutePath, 'utf-8');
-    const manifest = JSON.parse(content);
+    let manifest = JSON.parse(content);
+
+    if (isFix) {
+      const fixed = fixManifest(manifest);
+      const fixedContent = JSON.stringify(fixed, null, 2);
+      if (fixedContent !== JSON.stringify(manifest, null, 2)) {
+        fs.writeFileSync(absolutePath, fixedContent, 'utf-8');
+        console.log(chalk.blue.bold(`\nApplied auto-fixes to ${filePath}.\n`));
+        manifest = fixed;
+      }
+    }
+
     const result = validateManifest(manifest);
 
     if (result.valid) {

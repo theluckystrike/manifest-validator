@@ -143,3 +143,47 @@ export function validateManifest(manifest: any): ValidationResult {
     suggestions
   };
 }
+
+export function fixManifest(manifest: any): any {
+  const fixed = JSON.parse(JSON.stringify(manifest));
+
+  // 1. Rename browser_action to action
+  if (fixed.browser_action) {
+    fixed.action = fixed.browser_action;
+    delete fixed.browser_action;
+  }
+
+  // 2. Rename background.scripts to background.service_worker
+  if (fixed.background && fixed.background.scripts && Array.isArray(fixed.background.scripts)) {
+    if (fixed.background.scripts.length > 0) {
+      fixed.background.service_worker = fixed.background.scripts[0];
+    }
+    delete fixed.background.scripts;
+  }
+
+  // 3. Move URL match patterns from permissions to host_permissions
+  if (fixed.permissions && Array.isArray(fixed.permissions)) {
+    const hostPermissions = fixed.host_permissions || [];
+    const newPermissions: string[] = [];
+
+    fixed.permissions.forEach((p: string) => {
+      if (p.includes('://') || p === '<all_urls>') {
+        if (!hostPermissions.includes(p)) {
+          hostPermissions.push(p);
+        }
+      } else {
+        newPermissions.push(p);
+      }
+    });
+
+    fixed.permissions = newPermissions;
+    if (hostPermissions.length > 0) {
+      fixed.host_permissions = hostPermissions;
+    }
+    if (fixed.permissions.length === 0) {
+      delete fixed.permissions;
+    }
+  }
+
+  return fixed;
+}
