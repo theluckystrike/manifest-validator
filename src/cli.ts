@@ -19,15 +19,18 @@ async function main() {
     const result = validateManifest(manifest);
 
     if (result.valid) {
-      console.log(chalk.green('✔ manifest.json is valid for MV3.'));
+      console.log(chalk.green.bold('\n✔ Manifest is valid for Manifest V3!\n'));
     } else {
-      console.log(chalk.red(`✖ Found ${result.errors.length} errors.`));
-      result.errors.forEach(err => console.log(chalk.red(` - ${err}`)));
+      console.log(chalk.red.bold(`\n✖ Validation Failed: ${result.errors.length} error(s) found.\n`));
+      result.errors.forEach(err => console.log(chalk.red(`  [ERROR] ${err}`)));
     }
 
     if (result.suggestions.length > 0) {
-      console.log(chalk.yellow('\nSuggestions:'));
-      result.suggestions.forEach(s => console.log(chalk.yellow(` - ${s}`)));
+      console.log(chalk.cyan.bold('\n💡 Actionable Suggestions:'));
+      // Remove duplicates from suggestions
+      const uniqueSuggestions = Array.from(new Set(result.suggestions));
+      uniqueSuggestions.forEach(s => console.log(chalk.cyan(`  - ${s}`)));
+      console.log('');
     }
 
     if (!result.valid) {

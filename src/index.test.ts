@@ -36,4 +36,121 @@ describe('manifest-validator', () => {
     expect(result.valid).toBe(false);
     expect(result.errors).toContain('Unknown permission: "unknownPermission".');
   });
+
+  describe('MV3 Specific Rules', () => {
+    const validIcons = { '16': 'icon16.png', '48': 'icon48.png', '128': 'icon128.png' };
+
+    it('should fail if host permissions are in "permissions"', () => {
+      const manifest = {
+        manifest_version: 3,
+        name: 'Test Ext',
+        version: '1.0',
+        icons: validIcons,
+        permissions: ['tabs', 'https://*.google.com/*']
+      };
+      const result = validateManifest(manifest);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes('host_permissions'))).toBe(true);
+    });
+
+    it('should validate correct host_permissions', () => {
+      const manifest = {
+        manifest_version: 3,
+        name: 'Test Ext',
+        version: '1.0',
+        icons: validIcons,
+        host_permissions: ['https://*.google.com/*']
+      };
+      const result = validateManifest(manifest);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should fail if API permissions are in "host_permissions"', () => {
+      const manifest = {
+        manifest_version: 3,
+        name: 'Test Ext',
+        version: '1.0',
+        icons: validIcons,
+        host_permissions: ['storage']
+      };
+      const result = validateManifest(manifest);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('"storage" is not a valid host permission pattern.');
+    });
+
+    it('should detect deprecated browser_action and page_action', () => {
+      const manifest1 = {
+        manifest_version: 3,
+        name: 'Test Ext',
+        version: '1.0',
+        icons: validIcons,
+        browser_action: { default_popup: 'popup.html' }
+      };
+      const manifest2 = {
+        manifest_version: 3,
+        name: 'Test Ext',
+        version: '1.0',
+        icons: validIcons,
+        page_action: { default_popup: 'popup.html' }
+      };
+      expect(validateManifest(manifest1).valid).toBe(false);
+      expect(validateManifest(manifest2).valid).toBe(false);
+    });
+
+    it('should validate valid content_scripts', () => {
+      const manifest = {
+        manifest_version: 3,
+        name: 'Test Ext',
+        version: '1.0',
+        icons: validIcons,
+        content_scripts: [{
+          matches: ['<all_urls>'],
+          js: ['content.js']
+        }]
+      };
+      expect(validateManifest(manifest).valid).toBe(true);
+    });
+
+    it('should fail if content_scripts matches are missing', () => {
+      const manifest = {
+        manifest_version: 3,
+        name: 'Test Ext',
+        version: '1.0',
+        icons: validIcons,
+        content_scripts: [{
+          js: ['content.js']
+        }]
+      };
+      const result = validateManifest(manifest);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes('missing a "matches" array'))).toBe(true);
+    });
+
+    it('should fail if web_accessible_resources is in MV2 format', () => {
+      const manifest = {
+        manifest_version: 3,
+        name: 'Test Ext',
+        version: '1.0',
+        icons: validIcons,
+        web_accessible_resources: ['image.png']
+      };
+      const result = validateManifest(manifest);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes('should be an object in MV3'))).toBe(true);
+    });
+
+    it('should validate MV3 web_accessible_resources format', () => {
+      const manifest = {
+        manifest_version: 3,
+        name: 'Test Ext',
+        version: '1.0',
+        icons: validIcons,
+        web_accessible_resources: [{
+          resources: ['image.png'],
+          matches: ['<all_urls>']
+        }]
+      };
+      expect(validateManifest(manifest).valid).toBe(true);
+    });
+  });
 });

@@ -61,12 +61,72 @@ export function validateManifest(manifest: any): ValidationResult {
   ];
 
   if (manifest.permissions) {
-    manifest.permissions.forEach((p: string) => {
-      if (!validPermissions.includes(p)) {
-        errors.push(`Unknown permission: "${p}".`);
-        suggestions.push(`Check the spelling of "${p}".`);
-      }
-    });
+    if (!Array.isArray(manifest.permissions)) {
+      errors.push('"permissions" must be an array.');
+    } else {
+      manifest.permissions.forEach((p: string) => {
+        if (p.includes('://') || p === '<all_urls>') {
+          errors.push(`Host permission "${p}" must be in "host_permissions", not "permissions".`);
+          suggestions.push(`Move "${p}" from "permissions" to "host_permissions".`);
+        } else if (!validPermissions.includes(p)) {
+          errors.push(`Unknown permission: "${p}".`);
+          suggestions.push(`Check the spelling of "${p}".`);
+        }
+      });
+    }
+  }
+
+  // Host Permissions
+  if (manifest.host_permissions) {
+    if (!Array.isArray(manifest.host_permissions)) {
+      errors.push('"host_permissions" must be an array.');
+    } else {
+      manifest.host_permissions.forEach((p: string) => {
+        if (!p.includes('://') && p !== '<all_urls>') {
+          errors.push(`"${p}" is not a valid host permission pattern.`);
+          suggestions.push(`Move "${p}" to "permissions" if it is an API permission.`);
+        }
+      });
+    }
+  }
+
+  // Action
+  if (manifest.browser_action) {
+    errors.push('"browser_action" is deprecated in MV3.');
+    suggestions.push('Replace "browser_action" with "action".');
+  }
+  if (manifest.page_action) {
+    errors.push('"page_action" is deprecated in MV3.');
+    suggestions.push('Replace "page_action" with "action".');
+  }
+
+  // Content Scripts
+  if (manifest.content_scripts) {
+    if (!Array.isArray(manifest.content_scripts)) {
+      errors.push('"content_scripts" must be an array.');
+    } else {
+      manifest.content_scripts.forEach((script: any, index: number) => {
+        if (!script.matches || !Array.isArray(script.matches)) {
+          errors.push(`"content_scripts[${index}]" is missing a "matches" array.`);
+        }
+      });
+    }
+  }
+
+  // Web Accessible Resources
+  if (manifest.web_accessible_resources) {
+    if (!Array.isArray(manifest.web_accessible_resources)) {
+      errors.push('"web_accessible_resources" must be an array.');
+    } else {
+      manifest.web_accessible_resources.forEach((resource: any, index: number) => {
+        if (typeof resource === 'string') {
+          errors.push(`"web_accessible_resources[${index}]" should be an object in MV3.`);
+          suggestions.push('Update to: { "resources": ["..."], "matches": ["..."] }.');
+        } else if (!resource.resources || !resource.matches) {
+          errors.push(`"web_accessible_resources[${index}]" must include "resources" and "matches".`);
+        }
+      });
+    }
   }
 
   // CSP
