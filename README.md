@@ -1,6 +1,6 @@
 # manifest-validator
 
-Validates manifest.json for MV3 compliance and reports errors with fix suggestions.
+Validate manifest.json files for Manifest V3 compliance and receive suggestions for identified errors.
 
 ## Installation
 
@@ -16,11 +16,11 @@ Point the tool at your manifest.json file.
 manifest-validator ./manifest.json
 ```
 
-It checks for required fields, permissions spelling, icon sizes, and service worker configuration.
+The tool validates mandatory fields, permissions spelling, icon sizes, and service worker configuration.
 
 ## Chrome Extension Guide
 
-For deeper learning about building extensions check out chrome-extension-guide.
+For deeper learning about building extensions, refer to the chrome-extension-guide.
 
 ## License
 
