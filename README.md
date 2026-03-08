@@ -1,32 +1,53 @@
-# manifest-validator
+# @theluckystrike/manifest-validator
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![npm](https://img.shields.io/badge/npm-v1.0.0-cb3837?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@theluckystrike/manifest-validator)
-[![MIT](https://img.shields.io/badge/License-MIT-969464?style=flat-square)](#license)
+[![License: MIT](https://img.shields.io/badge/License-MIT-969464?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Last Commit](https://img.shields.io/github/last-commit/theluckystrike/manifest-validator/main?style=flat-square)](https://github.com/theluckystrike/manifest-validator/commits/main)
+[![Stars](https://img.shields.io/github/stars/theluckystrike/manifest-validator?style=flat-square)](https://github.com/theluckystrike/manifest-validator)
 
-Validate `manifest.json` files for Chrome Extension Manifest V3 compliance and receive actionable suggestions for identified errors.
+A powerful toolkit for validating Chrome Extension `manifest.json` files for Manifest V3 compliance. Get actionable suggestions to fix identified errors and even auto-fix common MV2 → MV3 migration issues.
+
+## Features
+
+- ✅ Validates Manifest V3 compliance
+- ✅ Comprehensive error detection with actionable suggestions
+- ✅ Auto-fix capabilities for MV2 → MV3 migration
+- ✅ CLI and programmatic API
+- ✅ TypeScript support
 
 ## Installation
 
 ```bash
+# Global installation (CLI usage)
 npm install -g @theluckystrike/manifest-validator
+
+# Local installation (programmatic usage)
+npm install @theluckystrike/manifest-validator
 ```
 
 ## Usage
 
 ### CLI
 
-Point the tool at your `manifest.json` file:
+Validate your extension's `manifest.json`:
 
 ```bash
 manifest-validator ./manifest.json
 ```
 
+Auto-fix common issues (MV2 → MV3 migration):
+
+```bash
+manifest-validator ./manifest.json --fix
+```
+
 ### Programmatic API
 
 ```typescript
-import { validateManifest, ValidationResult } from '@theluckystrike/manifest-validator';
+import { validateManifest, fixManifest, ValidationResult } from '@theluckystrike/manifest-validator';
 
+// Validate a manifest
 const manifest = {
   manifest_version: 3,
   name: 'My Extension',
@@ -54,7 +75,28 @@ if (result.valid) {
   console.error('✖ Validation failed:', result.errors);
   console.log('💡 Suggestions:', result.suggestions);
 }
+
+// Auto-fix MV2 → MV3 migration issues
+const mv2Manifest = {
+  manifest_version: 2,
+  name: 'Legacy Extension',
+  version: '1.0.0',
+  browser_action: { default_popup: 'popup.html' },
+  background: { scripts: ['bg.js'] },
+  permissions: ['storage', 'https://*.google.com/*']
+};
+
+const fixedManifest = fixManifest(mv2Manifest);
+console.log('Fixed manifest:', JSON.stringify(fixedManifest, null, 2));
 ```
+
+## Utilities & Modules
+
+| Module | Description |
+|--------|-------------|
+| `validateManifest(manifest)` | Validates a manifest.json object for MV3 compliance |
+| `fixManifest(manifest)` | Auto-fixes common MV2 → MV3 migration issues |
+| `ValidationResult` | Interface containing validation results |
 
 ## Validation Rules
 
@@ -83,6 +125,18 @@ Validates a Chrome Extension manifest object for Manifest V3 compliance.
 
 **Returns:** `ValidationResult`
 
+### `fixManifest(manifest: any): any`
+
+Auto-fixes common MV2 → MV3 migration issues:
+- Renames `browser_action` to `action`
+- Renames `background.scripts` to `background.service_worker`
+- Moves host permissions from `permissions` to `host_permissions`
+
+**Parameters:**
+- `manifest` - The manifest.json object to fix
+
+**Returns:** Fixed manifest object
+
 ### `ValidationResult`
 
 ```typescript
@@ -99,14 +153,24 @@ interface ValidationResult {
 | `errors` | `string[]` | Array of critical errors that cause validation failure |
 | `suggestions` | `string[]` | Actionable suggestions to fix issues |
 
-## Chrome Extension Guide
+## Project Structure
 
-For deeper learning about building extensions, refer to the [Chrome Extension Guide](https://developer.chrome.com/docs/extensions/mv3).
+```
+webext-toolkit/
+├── src/
+│   ├── index.ts          # Core validation and fix logic
+│   ├── index.test.ts     # Test suite
+│   └── cli.ts            # Command-line interface
+├── package.json          # Package configuration
+├── tsconfig.json         # TypeScript configuration
+├── LICENSE               # MIT License
+└── README.md             # This file
+```
 
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-Built by [theluckystrike](https://github.com/theluckystrike) | [zovo.one](https://zovo.one)
+Built at [zovo.one](https://zovo.one) by [theluckystrike](https://github.com/theluckystrike)
